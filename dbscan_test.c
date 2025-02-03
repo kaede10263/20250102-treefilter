@@ -36,14 +36,8 @@ float calculateDistance(GTRACK_measurementPoint p1, GTRACK_measurementPoint p2) 
 int findNeighbors(GTRACK_measurementPoint *points, int numPoints, int index, float eps, int *neighbors) {
     int count = 0;
     for (int i = 0; i < numPoints; i++) {
-        if (i != index && points[i].snr >= 25 && calculateDistance(points[index], points[i]) <= eps) {
+        if (i != index && points[i].snr >= 25 && abs(points[i].vector.doppler) < 0.2 && calculateDistance(points[index], points[i]) <= eps) {
             neighbors[count++] = i;
-            // float azimuth_rad = points[i].vector.azimuth * (M_PI / 180.0f);
-            // float x = points[i].vector.range * sinf(azimuth_rad);
-            // float y = points[i].vector.range * cosf(azimuth_rad);
-            // printf("Point %d: range=%.2f, azi=%.2f(degree), x=%.2f, y=%.2f\n",
-            //    i, points[i].vector.range, 
-            //    points[i].vector.azimuth, x, y);
         }
     }
     return count;
@@ -118,20 +112,23 @@ void findMaxClusterBounds(GTRACK_measurementPoint *points, int numPoints, DBSCAN
             float azimuth_rad = points[i].vector.azimuth * (M_PI / 180.0f);
             float x = points[i].vector.range * sinf(azimuth_rad);
             float y = points[i].vector.range * cosf(azimuth_rad);
+            int x_scaled = (int)(x * 100);
+            int y_scaled = (int)(y * 100);
 
             if (x < *xmin) *xmin = x;
             if (y < *ymin) *ymin = y;
             if (x > *xmax) *xmax = x;
             if (y > *ymax) *ymax = y;
-            printf("i: %d, xmin: %.2f,ymin: %.2f, xmax: %.2f, ymax: %.2f\n", i, *xmin, *ymin, *xmax, *ymax);
+            // printf("i: %d, xmin: %.2f,ymin: %.2f, xmax: %.2f, ymax: %.2f\n", i, *xmin, *ymin, *xmax, *ymax);
+            printf("i: %d, x: %.d,y: %.d\n", i, x_scaled, y_scaled);
         }
     }
 }
 
 // 主函數
-int main() {
-    int mNum = 16;
+int main() {    
     // 317
+    // int mNum = 16;
     // GTRACK_measurementPoint points[] = {
     //     {{0.640625, -68.318503, 0.0, 0.0}, 12},
     //     {{0.625, -61.100577, 0.0, 0.0}, 12},
@@ -180,22 +177,48 @@ int main() {
     // };
 
     // 326
+    // GTRACK_measurementPoint points[] = {
+    //     {{0.625, -59.47794342, 0.0, 0.0}, 13},
+    //     {{0.625, -59.47794342, 0.0, 0.0}, 13},
+    //     {{5.125, -22.43711662, 0.0, 0.0}, 22},
+    //     {{4.859375, -14.82752132, 0.0, 0.0}, 17},
+    //     {{4.84375, -14.82752132, 0.0, 0.0}, 17},
+    //     {{5.6875, 11.52629948, 0.0, 0.0}, 27},
+    //     {{5.875, 11.97392273, 0.0, 0.0}, 29},
+    //     {{5.875, 11.97392273, 0.0, 0.0}, 28},
+    //     {{6.640625, 13.87632179, 0.0, 0.0}, 11},
+    //     {{6.640625, 13.87632179, 0.0, 0.0}, 10},
+    //     {{6.046875, 16.72991943, 0.0, 0.0}, 28},
+    //     {{6.265625, 18.91208267, 0.0, 0.0}, 22},
+    //     {{6.828125, 21.87758827, 0.0, 0.0}, 10},
+    //     {{7.890625, 22.54902267, 0.0, 0.0}, 7},
+    //     {{6.84375, 26.85739708, 0.0, 0.0}, 10}
+    // };
+
+    // run 2 101
+    int mNum = 21;
     GTRACK_measurementPoint points[] = {
-        {{0.625, -59.47794342, 0.0, 0.0}, 13},
-        {{0.625, -59.47794342, 0.0, 0.0}, 13},
-        {{5.125, -22.43711662, 0.0, 0.0}, 22},
-        {{4.859375, -14.82752132, 0.0, 0.0}, 17},
-        {{4.84375, -14.82752132, 0.0, 0.0}, 17},
-        {{5.6875, 11.52629948, 0.0, 0.0}, 27},
-        {{5.875, 11.97392273, 0.0, 0.0}, 29},
-        {{5.875, 11.97392273, 0.0, 0.0}, 28},
-        {{6.640625, 13.87632179, 0.0, 0.0}, 11},
-        {{6.640625, 13.87632179, 0.0, 0.0}, 10},
-        {{6.046875, 16.72991943, 0.0, 0.0}, 28},
-        {{6.265625, 18.91208267, 0.0, 0.0}, 22},
-        {{6.828125, 21.87758827, 0.0, 0.0}, 10},
-        {{7.890625, 22.54902267, 0.0, 0.0}, 7},
-        {{6.84375, 26.85739708, 0.0, 0.0}, 10}
+        {{8.203125, -35.47, 0.0, 0.15}, 11},
+        {{6.9375, -5.595, 0.0, 0.15}, 18},
+        {{4.859375, -3.972, 0.0, 0.15}, 22},
+        {{4.875, -4.084, 0.0, 0.15}, 25},
+        {{4.4375, -1.902, 0.0, 0.15}, 8},
+        {{4.765625, 0.223, 0.0, 0.15}, 25},
+        {{6.6875, -0.2797, 0.0, 0.15}, 18},
+        {{6.65625, 3.189, 0.0, 0.15}, 18},
+        {{5.453125, 10.127, 0.0, 0.15}, 20},
+        {{5.46875, 10.127, 0.0, 0.15}, 20},
+        {{6.359375, 11.97, 0.0, 0.15}, 25},
+        {{6.171875, 13.204, 0.0, 0.15}, 24},
+        {{6.34375, 11.973, 0.0, 0.15}, 25},
+        {{6.32125, 16.7299, 0.0, 0.15}, 24},
+        {{8.890625, 31.669, 0.0, 0.15}, 13},
+        {{9.078125, 33.795, 0.0, 0.15}, 8},
+        {{8.890625, 34.858, 0.0, 0.15}, 13},
+        {{9.078125, 33.795, 0.0, 0.15}, 8},
+        {{0.59375, 52.539, 0.0, 0.15}, 10},
+        {{0.609375, 61.772, 0.0, 0.15}, 10},
+        {{0.609375, 61.772, 0.0, 0.15}, 10},        
     };
 
     float eps = 2.0;
@@ -203,13 +226,15 @@ int main() {
 
     DBSCANResult result;
     pointDbscan(points, mNum, eps, minSamples, &result);
-    for (int i = 0; i < mNum; i++) {
+    for (int i = 0; i < mNum; i++) {        
         float azimuth_rad = points[i].vector.azimuth * (M_PI / 180.0f);
         float x = points[i].vector.range * sinf(azimuth_rad);
         float y = points[i].vector.range * cosf(azimuth_rad);
+        int x_scaled = (int)(x * 100);
+        int y_scaled = (int)(y * 100);
         printf("Point %d: cluster =%d, range=%.2f, azi=%.2f(degree), x=%.2f, y=%.2f\n",
                i, result.cluster[i], points[i].vector.range, 
-               points[i].vector.azimuth, x, y);
+               points[i].vector.azimuth, x, y);        
     }
 
 
