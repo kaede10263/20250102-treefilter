@@ -48,6 +48,7 @@ void pointDbscan(GTRACK_measurementPoint *points, int numPoints, float eps, int 
     int clusterId = 0;
     int neighbors[MAX_POINTS];
 
+
     for (int i = 0; i < numPoints; i++) {
         result->visited[i] = UNVISITED;
         result->cluster[i] = UNVISITED;
@@ -77,7 +78,7 @@ void pointDbscan(GTRACK_measurementPoint *points, int numPoints, float eps, int 
                         }
                     }
                 }
-                if (result->cluster[neighborIdx] == UNVISITED) {
+                if (result->cluster[neighborIdx] == UNVISITED || result->cluster[neighborIdx] == NOISE) {
                     result->cluster[neighborIdx] = clusterId;
                 }
             }
@@ -107,8 +108,12 @@ void findMaxClusterBounds(GTRACK_measurementPoint *points, int numPoints, DBSCAN
     *xmax = -FLT_MAX;
     *ymax = -FLT_MAX;
 
+    int clusterIndices[MAX_POINTS];
+    int clusterCount = 0;
+
     for (int i = 0; i < numPoints; i++) {
         if (result->cluster[i] == maxCluster) {
+            clusterIndices[clusterCount++] = i;
             float azimuth_rad = points[i].vector.azimuth * (M_PI / 180.0f);
             float x = points[i].vector.range * sinf(azimuth_rad);
             float y = points[i].vector.range * cosf(azimuth_rad);
@@ -122,6 +127,34 @@ void findMaxClusterBounds(GTRACK_measurementPoint *points, int numPoints, DBSCAN
             // printf("i: %d, xmin: %.2f,ymin: %.2f, xmax: %.2f, ymax: %.2f\n", i, *xmin, *ymin, *xmax, *ymax);
             printf("i: %d, x: %.d,y: %.d\n", i, x_scaled, y_scaled);
         }
+    }
+
+    // printf("Pairwise Distance Matrix for maxCluster %d:\n", maxCluster);
+    // for (int i = 0; i < clusterCount; i++) {
+    //     for (int j = 0; j < clusterCount; j++) {
+    //         if (i != j) {
+    //             printf("%6.2f ", calculateDistance(points[clusterIndices[i]], points[clusterIndices[j]]));
+    //         } else {
+    //             printf("%6.2f ", 0.0);
+    //         }
+    //     }
+    //     printf("\n");
+    // }
+}
+
+void computePairwiseDistanceMatrix(GTRACK_measurementPoint *points, int numPoints) {
+    printf("Pairwise Distance Matrix:\n");
+    for (int i = 0; i < numPoints; i++) {
+        // if (i == 0 || i == 3 || i == 5 || i == 10 || i == 12){
+        for (int j = 0; j < numPoints; j++) {
+            if (i != j) {
+                printf("%6.2f ", calculateDistance(points[i], points[j]));
+            } else {
+                printf("%6.2f ", 0.0);
+            }
+        } 
+        printf("\n");            
+        // }       
     }
 }
 
@@ -196,35 +229,70 @@ int main() {
     // };
 
     // run 2 101
-    int mNum = 21;
+    // int mNum = 21;
+    // GTRACK_measurementPoint points[] = {
+    //     {{8.203125, -35.47, 0.0, 0.15}, 11},
+    //     {{6.9375, -5.595, 0.0, 0.15}, 18},
+    //     {{4.859375, -3.9726, 0.0, 0.15}, 22},
+    //     {{4.875, -4.08456, 0.0, 0.15}, 25},
+    //     {{4.4375, -1.902, 0.0, 0.15}, 8},
+    //     {{4.765625, 0.223, 0.0, 0.15}, 25},
+    //     {{6.6875, -0.2797, 0.0, 0.15}, 18},
+    //     {{6.65625, 3.189, 0.0, 0.15}, 18},
+    //     {{5.453125, 10.127, 0.0, 0.15}, 20},
+    //     {{5.46875, 10.127, 0.0, 0.15}, 20},
+    //     {{6.359375, 11.97, 0.0, 0.15}, 25},
+    //     {{6.171875, 13.204, 0.0, 0.15}, 24},
+    //     {{6.34375, 11.973, 0.0, 0.15}, 25},
+    //     {{6.32125, 16.7299, 0.0, 0.15}, 24},
+    //     {{8.890625, 31.669, 0.0, 0.15}, 13},
+    //     {{9.078125, 33.795, 0.0, 0.15}, 8},
+    //     {{8.890625, 34.858, 0.0, 0.15}, 13},
+    //     {{9.078125, 33.795, 0.0, 0.15}, 8},
+    //     {{0.59375, 52.539, 0.0, 0.15}, 10},
+    //     {{0.609375, 61.772, 0.0, 0.15}, 10},
+    //     {{0.609375, 61.772, 0.0, 0.15}, 10},        
+    // };
+
+    // run 2 frame : 113
+    int mNum = 28;
     GTRACK_measurementPoint points[] = {
-        {{8.203125, -35.47, 0.0, 0.15}, 11},
-        {{6.9375, -5.595, 0.0, 0.15}, 18},
-        {{4.859375, -3.972, 0.0, 0.15}, 22},
-        {{4.875, -4.084, 0.0, 0.15}, 25},
-        {{4.4375, -1.902, 0.0, 0.15}, 8},
-        {{4.765625, 0.223, 0.0, 0.15}, 25},
-        {{6.6875, -0.2797, 0.0, 0.15}, 18},
-        {{6.65625, 3.189, 0.0, 0.15}, 18},
-        {{5.453125, 10.127, 0.0, 0.15}, 20},
-        {{5.46875, 10.127, 0.0, 0.15}, 20},
-        {{6.359375, 11.97, 0.0, 0.15}, 25},
-        {{6.171875, 13.204, 0.0, 0.15}, 24},
-        {{6.34375, 11.973, 0.0, 0.15}, 25},
-        {{6.32125, 16.7299, 0.0, 0.15}, 24},
-        {{8.890625, 31.669, 0.0, 0.15}, 13},
-        {{9.078125, 33.795, 0.0, 0.15}, 8},
-        {{8.890625, 34.858, 0.0, 0.15}, 13},
-        {{9.078125, 33.795, 0.0, 0.15}, 8},
-        {{0.59375, 52.539, 0.0, 0.15}, 10},
-        {{0.609375, 61.772, 0.0, 0.15}, 10},
-        {{0.609375, 61.772, 0.0, 0.15}, 10},        
+        {{0.640625,-69.32565308,0.0, 0.15625}, 11},
+        {{0.640625,-63.78631592,0.0, 0.15625}, 11},
+        {{0.625,-55.44933319,0.0, 0.15625}, 11},
+        {{4.515625,-14.82752132,0.0, 0.15625}, 11},
+        {{5.078125,-16.67396736,0.0, 0.15625}, 28},
+        {{4.515625,-14.82752132,0.0, 0.15625}, 11},
+        {{4.875,-12.2536869,0.0, 0.15625}, 26},
+        {{4.953125,-12.47749901,0.0, 0.15625}, 29},
+        {{5.34375,0.895246565,0.0, -0.15625}, 27},
+        {{5.390625,3.636939049,0.0, -0.15625}, 26},
+        {{5.765625,6.71434927,0.0, -0.15625}, 25},
+        {{6.125,8.281030655,0.0, -0.15625}, 19},
+        {{6.140625,10.79891109,0.0, -0.15625}, 19},
+        {{7.203125,23.83593941,0.0, -0.15625}, 13},
+        {{7.25,26.52167892,0.0, -0.15625}, 12},
+        {{8.53125,33.23602676,0.0, -0.15625}, 13},
+        {{9.125,33.79555893,0.0, -0.15625}, 18},
+        {{1.765625,38.21583557,0.0, 9.25} ,8},
+        {{8.546875,38.21583557,0.0, -0.15625}, 12},
+        {{9.125,38.21583557,0.0, -0.15625}, 18},
+        {{9.3125,37.82416534,0.0, -0.15625}, 18},
+        {{8.5625,38.21583557,0.0, -0.15625}, 12},
+        {{9.125,38.21583557,0.0, -0.15625}, 18},
+        {{9.71875,39.33489609,0.0, -0.15625}, 11},
+        {{1.78125,42.85992813,0.0, 9.25} ,8},
+        {{9.3125,41.29324722,0.0, -0.15625}, 18},
+        {{1.78125,42.85992813,0.0, 9.25} ,8},
+        {{9.96875,45.48971558,0.0, -0.15625}, 10}            
     };
 
-    float eps = 2.0;
+    float eps = 2;
     int minSamples = 3;
 
     DBSCANResult result;
+    
+    printf("Point 3 snr = %.2f\n" , points[3].snr );
     pointDbscan(points, mNum, eps, minSamples, &result);
     for (int i = 0; i < mNum; i++) {        
         float azimuth_rad = points[i].vector.azimuth * (M_PI / 180.0f);
@@ -232,7 +300,7 @@ int main() {
         float y = points[i].vector.range * cosf(azimuth_rad);
         int x_scaled = (int)(x * 100);
         int y_scaled = (int)(y * 100);
-        printf("Point %d: cluster =%d, range=%.2f, azi=%.2f(degree), x=%.2f, y=%.2f\n",
+        printf("Point %d: cluster =%d, range=%.3f, azi=%.3f(degree), x=%.3f, y=%.3f\n",
                i, result.cluster[i], points[i].vector.range, 
                points[i].vector.azimuth, x, y);        
     }
@@ -243,6 +311,8 @@ int main() {
     printf("==================== \n");
 
     printf("xmin: %.2f, ymin: %.2f, xmax: %.2f, ymax: %.2f\n", xmin, ymin, xmax, ymax);
+
+    // computePairwiseDistanceMatrix(points, mNum);
 
     return 0;
 }
