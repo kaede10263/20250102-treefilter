@@ -37,9 +37,11 @@ int findNeighbors(GTRACK_measurementPoint *points, int numPoints, int index, flo
     int count = 0;
     for (int i = 0; i < numPoints; i++) {
         if (i != index && points[i].snr >= 25 && abs(points[i].vector.doppler) < 0.2 && calculateDistance(points[index], points[i]) <= eps) {
+            printf(" with %d point dis is : %.2f \n", i, calculateDistance(points[index], points[i]));
             neighbors[count++] = i;
         }
     }
+    printf(" neighborCount : %d\n", count);
     return count;
 }
 
@@ -49,25 +51,33 @@ void pointDbscan(GTRACK_measurementPoint *points, int numPoints, float eps, int 
     int neighbors[MAX_POINTS];
 
 
-    for (int i = 0; i < numPoints; i++) {
+    for (int i = 0; i < numPoints; i++) {        
         result->visited[i] = UNVISITED;
         result->cluster[i] = UNVISITED;
+        printf("init %d %d %d \n", i, result->visited[i], result->cluster[i]);
     }
 
     for (int i = 0; i < numPoints; i++) {
+        printf("points %d : it is visited : %d \n", i, result->visited[i]);
         if (result->visited[i] != UNVISITED) continue;
 
+        printf("go head \n");
         result->visited[i] = 1;
-        int neighborCount = findNeighbors(points, numPoints, i, eps, neighbors);
+        int neighborCount = findNeighbors(points, numPoints, i, eps, neighbors);        
 
-        if (neighborCount < minSamples) {
+        if (neighborCount < minSamples || points[i].snr < 25) {
+            printf("    points %d : is noise\n", i);
             result->cluster[i] = NOISE;
-        } else {
+        } 
+        else 
+        {            
             clusterId++;
             result->cluster[i] = clusterId;
 
             for (int j = 0; j < neighborCount; j++) {
+                printf("    in for %d neighborIdx : %d \n", j, neighbors[j]);
                 int neighborIdx = neighbors[j];
+                // if (points[neighborIdx].snr > 25) continue;
                 if (result->visited[neighborIdx] == UNVISITED) {
                     result->visited[neighborIdx] = 1;
                     int nextNeighbors[MAX_POINTS];
@@ -287,12 +297,11 @@ int main() {
         {{9.96875,45.48971558,0.0, -0.15625}, 10}            
     };
 
-    float eps = 2;
+    float eps = 2.0f;
     int minSamples = 3;
 
     DBSCANResult result;
     
-    printf("Point 3 snr = %.2f\n" , points[3].snr );
     pointDbscan(points, mNum, eps, minSamples, &result);
     for (int i = 0; i < mNum; i++) {        
         float azimuth_rad = points[i].vector.azimuth * (M_PI / 180.0f);
