@@ -1,0 +1,5 @@
+20250304_sim   vr point < 0.6 filter
+20250305_sim   vr point < 0.4 filter
+20250307_sim   vr point < 0.2 filter
+20250318_sim   statistic vr 50% < 0.5 ++
+20250319_sim   statistic vr 50% < 0.4 ++
